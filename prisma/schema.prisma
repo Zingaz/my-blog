@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// The User, Account, Session, and VerificationToken models are required for NextAuth.js.
+// You can use the following schema (adjust as needed):
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String?
+  email         String?  @unique
+  emailVerified DateTime?
+  image         String?
+  posts         Post[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  Int?
+}
+
+model Account {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?   @db.Text
+  access_token       String?   @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?   @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
